@@ -1,26 +1,32 @@
+<div align="center">
+
+<img src="docs/logo.svg" alt="AOC Light FX" width="160">
+
 # AOC Light FX para SignalRGB
 
-![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)
-![NVIDIA](https://img.shields.io/badge/GPU-NVIDIA-76B900?logo=nvidia&logoColor=white)
-![SignalRGB](https://img.shields.io/badge/SignalRGB-plugin-8A2BE2)
-![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)
+**Controle o Light FX dos monitores AOC AGON pelo SignalRGB, sem o G-Menu.**
 
-Plugin do [SignalRGB](https://signalrgb.com) para controlar o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**, sem depender do G-Menu.
+[![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)](#instalação)
+[![NVIDIA](https://img.shields.io/badge/GPU-NVIDIA-76B900?logo=nvidia&logoColor=white)](#limitações)
+[![SignalRGB](https://img.shields.io/badge/SignalRGB-plugin-8A2BE2)](https://signalrgb.com)
+[![Python](https://img.shields.io/badge/Python-3.8%2B-3776AB?logo=python&logoColor=white)](#rodar-direto-do-código)
+[![Licença MIT](https://img.shields.io/badge/licen%C3%A7a-MIT-blue)](LICENSE)
+
+[Início rápido](#início-rápido) •
+[Instalação](#instalação) •
+[Efeitos](#efeitos-do-monitor) •
+[Protocolo](#protocolo) •
+[Limitações](#limitações)
+
+</div>
+
+---
+
+Plugin do [SignalRGB](https://signalrgb.com) para controlar o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**.
 
 Testado no **AOC AG323FWG3R3** com placa **NVIDIA** (RTX 3070 Ti). Outros monitores AOC com Light FX usam o mesmo protocolo e devem funcionar. Se você testar outro modelo, abra uma issue contando o resultado.
 
 > 🇺🇸 **English:** SignalRGB plugin for the Light FX RGB lighting on AOC AGON monitors. It talks DDC/CI through NVIDIA's NVAPI I2C via a small local Python bridge. See [Protocolo](#protocolo) for the reverse-engineered commands and the timing the monitor needs.
-
-## Sumário
-
-- [Início rápido](#início-rápido)
-- [Como funciona](#como-funciona)
-- [Instalação](#instalação)
-- [Opções no SignalRGB](#opções-no-signalrgb)
-- [Efeitos do monitor](#efeitos-do-monitor)
-- [Ícone na bandeja](#ícone-na-bandeja)
-- [Limitações](#limitações)
-- [Protocolo](#protocolo)
 
 ## Início rápido
 
