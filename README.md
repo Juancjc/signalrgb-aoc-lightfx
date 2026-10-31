@@ -1,6 +1,6 @@
 <div align="center">
 
-# JotAC
+# signalrgb-aoc-lightfx
 
 🟥🟧🟨🟩🟦🟪
 
@@ -24,11 +24,11 @@
 
 ---
 
-O **JotAC** é um plugin do [SignalRGB](https://signalrgb.com) que controla o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**.
+O **signalrgb-aoc-lightfx** é um plugin do [SignalRGB](https://signalrgb.com) que controla o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**.
 
 Testado no **AOC AG323FWG3R3** com placa **NVIDIA** (RTX 3070 Ti). Outros monitores AOC com Light FX usam o mesmo protocolo e devem funcionar. Se você testar outro modelo, abra uma issue contando o resultado.
 
-> 🇺🇸 **English:** JotAC is an unofficial SignalRGB plugin for the Light FX RGB lighting on AOC AGON monitors. It talks DDC/CI through NVIDIA's NVAPI I2C via a small local Python bridge. See [Protocolo](#protocolo) for the reverse-engineered commands and the timing the monitor needs.
+> 🇺🇸 **English:** signalrgb-aoc-lightfx is an unofficial SignalRGB plugin for the Light FX RGB lighting on AOC AGON monitors. It talks DDC/CI through NVIDIA's NVAPI I2C via a small local Python bridge. See [Protocolo](#protocolo) for the reverse-engineered commands and the timing the monitor needs.
 
 ## Início rápido
 
@@ -201,7 +201,7 @@ Por isso a ponte:
 
 ## Aviso
 
-O JotAC é um projeto independente e **não oficial**, sem relação com AOC, TPV ou WhirlwindFX. Use por sua conta e risco. Os comandos são os mesmos que o G-Menu envia ao monitor.
+Este é um projeto independente e **não oficial**, sem relação com AOC, TPV ou WhirlwindFX. Use por sua conta e risco. Os comandos são os mesmos que o G-Menu envia ao monitor.
 
 AOC, AGON e Light FX são marcas da TPV Technology. SignalRGB é marca da WhirlwindFX. Elas são citadas só para indicar compatibilidade.
 
