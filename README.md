@@ -1,10 +1,12 @@
 <div align="center">
 
-<img src="docs/logo.svg" alt="AOC Light FX" width="160">
+<img src="docs/logo.svg" alt="JotAC" width="160">
 
-# AOC Light FX para SignalRGB
+# JotAC
 
-**Controle o Light FX dos monitores AOC AGON pelo SignalRGB, sem o G-Menu.**
+**Plugin do SignalRGB para a iluminação RGB traseira dos monitores AOC AGON, sem o G-Menu.**
+
+<sub>Projeto independente, compatível com monitores AOC. Não é um produto da AOC.</sub>
 
 [![Windows](https://img.shields.io/badge/Windows-10%20%7C%2011-0078D6?logo=windows&logoColor=white)](#instalação)
 [![NVIDIA](https://img.shields.io/badge/GPU-NVIDIA-76B900?logo=nvidia&logoColor=white)](#limitações)
@@ -22,11 +24,11 @@
 
 ---
 
-Plugin do [SignalRGB](https://signalrgb.com) para controlar o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**.
+O **JotAC** é um plugin do [SignalRGB](https://signalrgb.com) que controla o **Light FX**, a iluminação RGB traseira dos monitores **AOC AGON**.
 
 Testado no **AOC AG323FWG3R3** com placa **NVIDIA** (RTX 3070 Ti). Outros monitores AOC com Light FX usam o mesmo protocolo e devem funcionar. Se você testar outro modelo, abra uma issue contando o resultado.
 
-> 🇺🇸 **English:** SignalRGB plugin for the Light FX RGB lighting on AOC AGON monitors. It talks DDC/CI through NVIDIA's NVAPI I2C via a small local Python bridge. See [Protocolo](#protocolo) for the reverse-engineered commands and the timing the monitor needs.
+> 🇺🇸 **English:** JotAC is an unofficial SignalRGB plugin for the Light FX RGB lighting on AOC AGON monitors. It talks DDC/CI through NVIDIA's NVAPI I2C via a small local Python bridge. See [Protocolo](#protocolo) for the reverse-engineered commands and the timing the monitor needs.
 
 ## Início rápido
 
@@ -199,7 +201,9 @@ Por isso a ponte:
 
 ## Aviso
 
-Projeto não oficial, sem relação com AOC, TPV ou WhirlwindFX. Use por sua conta e risco. Os comandos são os mesmos que o G-Menu envia ao monitor.
+O JotAC é um projeto independente e **não oficial**, sem relação com AOC, TPV ou WhirlwindFX. Use por sua conta e risco. Os comandos são os mesmos que o G-Menu envia ao monitor.
+
+AOC, AGON e Light FX são marcas da TPV Technology. SignalRGB é marca da WhirlwindFX. Elas são citadas só para indicar compatibilidade.
 
 ## Licença
 
