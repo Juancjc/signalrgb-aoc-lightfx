@@ -1,8 +1,8 @@
 <div align="center">
 
-<img src="docs/logo.svg?v=jotac" alt="JotAC" width="160">
-
 # JotAC
+
+🟥🟧🟨🟩🟦🟪
 
 **Plugin do SignalRGB para a iluminação RGB traseira dos monitores AOC AGON, sem o G-Menu.**
 
