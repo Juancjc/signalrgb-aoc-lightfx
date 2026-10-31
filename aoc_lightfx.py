@@ -9,14 +9,52 @@ import time
 from ctypes import POINTER, Structure, byref, c_int, c_ubyte, c_uint32, c_void_p
 
 LIGHTFX = 0x60          # 0 desligado, 1 baixo, 2 medio, 3 forte
-LIGHTFX_MODE = 0x61     # indice na lista de modos (ver STATIC_INDEX_BY_MAX)
+LIGHTFX_MODE = 0x61     # indice na lista de modos (ver MODE_LISTS)
 PATTERN = 0x62          # 4 = definido pelo usuario
 FG_R, FG_G, FG_B = 0x63, 0x64, 0x65
 BG_R, BG_G, BG_B = 0x66, 0x67, 0x68
 
 PATTERN_USER = 4
-# maximo do codigo 0x61 -> indice do modo Static (enums LightFXMode_C/D/E/F/10 do G-Menu)
-STATIC_INDEX_BY_MAX = {12: 0, 13: 1, 14: 2, 15: 3, 16: 3}
+
+# Intervalo minimo entre escritas DDC. Medido no AG323FWG3R3: com 100 ms ou menos o
+# monitor descarta uma escrita sim, outra nao (a NVAPI responde sucesso mesmo assim);
+# com 110 ms nenhuma se perde.
+WRITE_DELAY = 0.12
+# Depois de trocar intensidade/modo/padrao o monitor fica ocupado mais tempo
+# (escrita no 0x61 logo apos o 0x60 se perde com 0,12 s; com 0,3 s pega).
+SETTLE_DELAY = 0.4
+
+# Efeitos que o plugin pode pedir (o codigo e o indice nesta lista).
+EFFECTS = ["Static", "SimpleShift", "GradientShift", "SimpleFilling", "1WayFilling", "2WayFilling",
+           "Breathing", "MotionPoint", "Zoom", "Discolor", "WaterWave", "Flashing"]
+
+# Lista de modos do monitor, escolhida pelo maximo do codigo 0x61
+# (enums LightFXMode_C/D/E/F/10 do G-Menu; o valor e a posicao na lista).
+_LIST_C = ["Static", "SimpleShift", "GradientShift", "SimpleFilling", "1WayFilling", "2WayFilling",
+           "Breathing", "MotionPoint", "Zoom", "Discolor", "WaterWave", "Flashing", "Demo"]
+_LIST_E = ["Audio1", "Audio2", "Static", "DarkPointSweep", "GradientShift", "Spread_Fill", "DripFill",
+           "SpreadingDripFill", "Breathing", "LightPointSweep", "Zoom", "Rainbow", "Wave", "Flashing", "Demo"]
+MODE_LISTS = {
+    12: _LIST_C,
+    13: ["Audio"] + _LIST_C,
+    14: _LIST_E,
+    15: ["LOL"] + _LIST_E,
+    16: ["CS"] + _LIST_E,
+}
+# Nas listas novas alguns efeitos mudaram de nome; usa o equivalente mais proximo.
+_EQUIVALENT = {"SimpleShift": "DarkPointSweep", "SimpleFilling": "Spread_Fill", "1WayFilling": "DripFill",
+               "2WayFilling": "SpreadingDripFill", "MotionPoint": "LightPointSweep", "Discolor": "GradientShift",
+               "WaterWave": "Wave"}
+
+
+def mode_index(mode_max, effect=0):
+    """Indice do registro 0x61 para o efeito pedido, ou o do Static se nao existir."""
+    modes = MODE_LISTS.get(mode_max, _LIST_C)
+    name = EFFECTS[effect] if 0 <= effect < len(EFFECTS) else "Static"
+    for candidate in (name, _EQUIVALENT.get(name), "Static"):
+        if candidate in modes:
+            return modes.index(candidate)
+    return 0
 
 _NVAPI_INITIALIZE = 0x0150E828
 _NVAPI_ENUM_PHYSICAL_GPUS = 0xE5AC921F
@@ -156,9 +194,10 @@ def _windows_monitors():
 
 
 class AocLightFx:
-    def __init__(self, name_filter="AOC", write_delay=0.1):
+    def __init__(self, name_filter="AOC", write_delay=WRITE_DELAY):
         self.nv = NvApi()
         self.write_delay = write_delay
+        self._last_access = 0.0
         self.gpu = self.display = None
         self.monitor_name = None
         self.color_max = 100
@@ -180,18 +219,29 @@ class AocLightFx:
         chk = 0x6E
         for b in frame:
             chk ^= b
+        self._pace()
         status = self.nv.i2c_write(self.gpu, self.display, 0x6E, frame[:1], frame[1:] + [chk])
-        time.sleep(self.write_delay)
+        self._last_access = time.monotonic()
+        if code in (LIGHTFX, LIGHTFX_MODE, PATTERN):
+            self._last_access += SETTLE_DELAY - self.write_delay
         return status == 0
+
+    def _pace(self):
+        """Espera o intervalo minimo desde o ultimo acesso ao barramento (escrita ou leitura)."""
+        wait = self.write_delay - (time.monotonic() - self._last_access)
+        if wait > 0:
+            time.sleep(wait)
 
     def get_raw(self, code, size=12):
         frame = [0x51, 0x84, 0x01, 0xF8, 0xE1, code]
         chk = 0x6E
         for b in frame:
             chk ^= b
+        self._pace()
         self.nv.i2c_write(self.gpu, self.display, 0x6E, frame[:1], frame[1:] + [chk])
         time.sleep(0.05)
         status, data = self.nv.i2c_read(self.gpu, self.display, 0x6F, [], size)
+        self._last_access = time.monotonic()
         return status, data
 
     def get(self, code):
@@ -203,16 +253,26 @@ class AocLightFx:
             time.sleep(0.1)
         return None
 
-    def prepare_user_color(self, intensity=3):
-        # O indice de "Static" depende da lista de modos do monitor (G-Menu escolhe pelo maximo do 0x61)
+    def prepare_user_color(self, intensity=3, effect=0):
+        """Liga o Light FX no efeito pedido usando as cores personalizadas.
+
+        Retorna o indice gravado no registro 0x61, ou None se alguma escrita falhou.
+        """
+        # O indice depende da lista de modos do monitor (G-Menu escolhe pelo maximo do 0x61)
         mode = self.get(LIGHTFX_MODE)
-        static_index = STATIC_INDEX_BY_MAX.get(mode[1], 0) if mode else 0
+        index = mode_index(mode[1] if mode else 12, effect)
         color = self.get(FG_R)
         self.color_max = color[1] if color and color[1] else 100
-        ok = self.set(LIGHTFX, intensity)
-        ok &= self.set(LIGHTFX_MODE, static_index)
-        ok &= self.set(PATTERN, PATTERN_USER)
-        return ok
+        # escritas que o monitor descarta nao dao erro: confere lendo de volta
+        for code, value in ((LIGHTFX, intensity), (LIGHTFX_MODE, index), (PATTERN, PATTERN_USER)):
+            for _ in range(3):
+                self.set(code, value)
+                got = self.get(code)
+                if got and got[0] == value:
+                    break
+            else:
+                return None
+        return index
 
     def _scale(self, v):
         return round(max(0, min(255, v)) * self.color_max / 255)

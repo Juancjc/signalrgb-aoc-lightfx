@@ -2,7 +2,7 @@
 ; Gere com instalador\build.bat, que antes empacota a ponte com o PyInstaller.
 
 #define AppName "AOC Light FX"
-#define AppVersion "0.0.1"
+#define AppVersion "0.1.0"
 #define AppExe "AOC Light FX.exe"
 
 [Setup]

@@ -15,7 +15,7 @@ SignalRGB ──UDP 127.0.0.1:21330──▶ aoc_lightfx_bridge.py ──NVAPI I
  (AOC_LightFX.js)
 ```
 
-- **`AOC_LightFX.js`**: o plugin do SignalRGB. Cria um dispositivo com 2 pontos (Frente e Fundo) e envia as cores para a ponte.
+- **`AOC_LightFX.js`**: o plugin do SignalRGB. Cria um dispositivo com 8 pontos em anel, escolhe duas cores do efeito e envia para a ponte junto com o efeito do monitor.
 - **`aoc_lightfx_bridge.py`**: a ponte. Recebe as cores e grava no monitor só o que mudou, cerca de 10 atualizações por segundo. Ela também relê o monitor e corrige o que se perder.
 - **`aoc_lightfx.py`**: a biblioteca DDC (NVAPI via `ctypes`, sem dependências externas).
 - **`aoc_lightfx_tray.py`**: o ícone na bandeja do Windows. Roda a ponte e tem o menu de opções.
@@ -84,13 +84,36 @@ Esse comando deixa o Light FX vermelho fixo.
 | Modo de iluminação | `Canvas` segue o efeito; `Forced` usa uma cor fixa |
 | Cor forçada | Cor usada no modo Forced |
 | Cor ao desligar | Cor enviada quando o SignalRGB fecha |
-| Fundo com a mesma cor da frente | Usa só uma cor ou cores separadas para frente e fundo |
+| Efeito do monitor | Animação feita pelo próprio monitor com as duas cores (veja abaixo). Padrão: Motion Point |
+| Escolha das cores | `Mais contrastantes`: as duas cores mais diferentes entre os 8 pontos. `Esquerda / direita`: média de cada metade do anel. `Média (cor única)`: uma cor só |
 | Intensidade do Light FX | Baixo, Médio ou Forte |
+
+### Duas cores e efeito do monitor
+
+O monitor não aceita cor por LED: ele só recebe duas cores (frente e fundo) e anima as duas com um efeito interno. No `Estático` só a cor de **fundo** aparece; nos outros efeitos as duas se misturam pelo anel.
+
+O plugin lê 8 pontos do canvas e escolhe duas cores. Nos efeitos animados a cor só troca a cada intervalo configurado (padrão 3 s), para a animação do monitor não ficar reiniciando.
+
+Testado com webcam no AG323FWG3R3, com frente vermelha e fundo azul:
+
+| Efeito | O que aparece no anel |
+| --- | --- |
+| Motion Point | Um ponto da cor da frente gira pelo anel sobre o fundo. É o que mais lembra uma fan RGB |
+| 1 Way Filling | A cor da frente vai enchendo o anel em uma direção |
+| Simple Filling | Enche com a frente e volta para o fundo |
+| Simple Shift, Gradient Shift, Water Wave | Ondas de brilho usando quase só a cor de fundo |
+| Breathing, Flashing | O anel inteiro pulsa ou pisca |
+| Zoom | Mistura frente e fundo pelo anel |
+| Discolor | Ignora as cores personalizadas (muda o padrão do monitor) |
+
+Para o anel girar com as cores do SignalRGB, use `Motion Point` com um efeito colorido como `Rainbow`.
+
+Os efeitos da lista são os do AG323FWG3R3. Monitores com a lista nova de efeitos (Wave, Drip Fill etc.) recebem o equivalente mais próximo.
 
 ## Limitações
 
-- **Cor única:** o monitor recebe uma cor de frente e uma de fundo. Não dá para controlar LED por LED.
-- **Velocidade:** cerca de 10 atualizações por segundo, porque o DDC é lento. Efeitos rápidos ficam suavizados.
+- **Duas cores:** o monitor recebe uma cor de frente e uma de fundo. Não dá para controlar LED por LED nem mostrar mais de duas cores ao mesmo tempo.
+- **Velocidade:** o monitor descarta escritas DDC feitas a menos de ~110 ms uma da outra (a NVAPI responde sucesso mesmo assim), e depois de trocar intensidade ou efeito fica ~0,3 s ocupado. A ponte espera 120 ms entre acessos, então uma cor completa (3 canais) leva ~0,4 s e as duas cores ~0,7 s. Efeitos rápidos ficam suavizados.
 - **Só NVIDIA por enquanto.** AMD (ADL) e Intel (IGCL) também têm acesso I2C; contribuições são bem-vindas.
 - **G-Menu:** ele usa o mesmo barramento e disputa com a ponte. Por padrão, o ícone da bandeja fecha o G-Menu sozinho. Se o G-Menu estiver rodando como administrador, feche-o manualmente.
 - **Monitor ou PC reiniciando:** desligar e ligar o monitor ou acordar o PC da suspensão ainda não foi testado. Se as luzes não voltarem, reinicie a ponte.
@@ -116,12 +139,22 @@ checksum = 0x6E XOR todos os bytes anteriores
 | Código | Função | Valores |
 |---|---|---|
 | `0x60` | Light FX (intensidade) | 0 desligado, 1 baixo, 2 médio, 3 forte |
-| `0x61` | Modo | Índice numa lista que depende do máximo informado pelo monitor (veja abaixo) |
+| `0x61` | Modo (efeito) | Índice numa lista que depende do máximo informado pelo monitor (veja abaixo) |
 | `0x62` | Pattern | 0 vermelho, 1 verde, 2 azul, 3 arco-íris, 4 personalizado |
 | `0x63`–`0x65` | Cor da frente R/G/B | 0 até o máximo (100 no AG323FWG3R3) |
 | `0x66`–`0x68` | Cor do fundo R/G/B | 0 até o máximo |
 
-O índice do modo **Static** depende do máximo do código `0x61`: 12 → 0, 13 → 1, 14 → 2, 15 ou 16 → 3.
+A lista de modos depende do máximo do código `0x61` (enums `LightFXMode_C/D/E/F/10` do G-Menu):
+
+| Máximo | Lista |
+|---|---|
+| 12 | Static, SimpleShift, GradientShift, SimpleFilling, 1WayFilling, 2WayFilling, Breathing, MotionPoint, Zoom, Discolor, WaterWave, Flashing, Demo |
+| 13 | Audio + a lista do 12 |
+| 14 | Audio1, Audio2, Static, DarkPointSweep, GradientShift, Spread_Fill, DripFill, SpreadingDripFill, Breathing, LightPointSweep, Zoom, Rainbow, Wave, Flashing, Demo |
+| 15 | LOL + a lista do 14 |
+| 16 | CS + a lista do 14 |
+
+Escritas perdidas não dão erro, então a ponte confere o `0x60`, o `0x61` e o `0x62` lendo de volta depois de gravar e tenta de novo se não pegou.
 
 ## Aviso
 
