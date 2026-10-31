@@ -17,7 +17,15 @@ VERIFY_INTERVAL = 0.3
 CODES =(fx.FG_R, fx.FG_G, fx.FG_B, fx.BG_R, fx.BG_G, fx.BG_B)
 
 
-LOG_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "ponte.log")
+# pasta do programa: a do .exe quando instalado (PyInstaller), senao a deste script
+if getattr(sys, "frozen", False):
+    BASE_DIR = os.path.dirname(sys.executable)
+else:
+    BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+LOG_FILE = os.path.join(BASE_DIR, "ponte.log")
+
+# estado atual, lido pelo icone da bandeja (aoc_lightfx_tray.py)
+status = {"monitor": None, "cor": None, "ultimo_pacote": 0.0}
 
 
 def log(msg):
@@ -35,16 +43,25 @@ def connect():
         try:
             mon = fx.AocLightFx(write_delay=0.03)
             log(f"Monitor encontrado: {mon.monitor_name}")
+            status["monitor"] = mon.monitor_name
             return mon
         except Exception as e:  # monitor desligado, driver reiniciando etc.
+            status["monitor"] = None
             log(f"Aguardando monitor: {e}")
             time.sleep(5)
 
 
-def main():
+def open_socket():
+    """Abre a porta UDP; falha com OSError se outra ponte ja estiver rodando."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((HOST, PORT))
     log(f"Escutando em udp://{HOST}:{PORT}")
+    return sock
+
+
+def main(sock=None):
+    if sock is None:
+        sock = open_socket()
 
     mon = connect()
     sent = {}            # codigo -> valor ja gravado no monitor
@@ -65,6 +82,8 @@ def main():
                     if target is None:
                         log(f"Recebendo cores do SignalRGB: {list(data[3:10])}")
                     target = data[3:10]
+                    status["cor"] = tuple(target[:3])
+                    status["ultimo_pacote"] = time.time()
                 sock.setblocking(False)
         except (socket.timeout, BlockingIOError):
             pass

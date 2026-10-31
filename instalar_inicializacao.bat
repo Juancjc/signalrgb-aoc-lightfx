@@ -1,4 +1,6 @@
 @echo off
-rem Opcional: cria um atalho na pasta Inicializar para a ponte AOC Light FX abrir junto com o Windows
-powershell -NoProfile -Command "$pyw = Join-Path (Split-Path (Get-Command python).Source) 'pythonw.exe'; $lnk = Join-Path ([Environment]::GetFolderPath('Startup')) 'AOC Light FX Ponte.lnk'; $s = (New-Object -ComObject WScript.Shell).CreateShortcut($lnk); $s.TargetPath = $pyw; $s.Arguments = '\"%~dp0aoc_lightfx_bridge.py\"'; $s.WorkingDirectory = '%~dp0'; $s.Save(); Write-Host 'Atalho criado:' $lnk"
+rem Opcional: faz a ponte AOC Light FX (com o icone na bandeja) abrir junto com o Windows.
+rem Tambem da para ligar/desligar isso pelo menu do icone.
+cd /d "%~dp0"
+python -c "import aoc_lightfx_tray as t; t.set_startup(True); print('Pronto: a ponte vai abrir junto com o Windows.')"
 pause
