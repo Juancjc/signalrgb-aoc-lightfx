@@ -18,22 +18,56 @@ SignalRGB ──UDP 127.0.0.1:21330──▶ aoc_lightfx_bridge.py ──NVAPI I
 - **`AOC_LightFX.js`**: o plugin do SignalRGB. Cria um dispositivo com 2 pontos (Frente e Fundo) e envia as cores para a ponte.
 - **`aoc_lightfx_bridge.py`**: a ponte. Recebe as cores e grava no monitor só o que mudou, cerca de 10 atualizações por segundo. Ela também relê o monitor e corrige o que se perder.
 - **`aoc_lightfx.py`**: a biblioteca DDC (NVAPI via `ctypes`, sem dependências externas).
+- **`aoc_lightfx_tray.py`**: o ícone na bandeja do Windows. Roda a ponte e tem o menu de opções.
 
 ## Requisitos
 
-- Windows 10 ou 11
+- Windows 10 ou 11 (64 bits)
 - Placa de vídeo **NVIDIA**
-- **Python 3.8+** no PATH
 - DDC/CI **ligado** no menu do monitor
 - SignalRGB
 
 ## Instalação
 
-1. Baixe este repositório, por exemplo para `C:\signalrgb-aoc-lightfx`.
-2. Copie `AOC_LightFX.js` para a pasta de plugins do SignalRGB: `Documentos\WhirlwindFX\Plugins`.
-3. Rode `iniciar_ponte.bat`. A ponte fica rodando escondida em segundo plano.
-4. Opcional: rode `instalar_inicializacao.bat` para a ponte abrir junto com o Windows.
-5. Reinicie o SignalRGB. O dispositivo **AOC Light FX** deve aparecer.
+1. Baixe o `AOC-LightFX-Setup-x.y.z.exe` e rode. Ele não pede administrador e não precisa de Python.
+2. O instalador coloca o plugin na pasta do SignalRGB (`Documentos\WhirlwindFX\Plugins`), cria o atalho no Menu Iniciar e, se a opção estiver marcada, faz a ponte abrir junto com o Windows.
+3. Reinicie o SignalRGB. O dispositivo **AOC Light FX** deve aparecer.
+
+Para desinstalar, use **Configurações > Aplicativos** ou o atalho **Desinstalar AOC Light FX** no Menu Iniciar.
+
+### Rodar direto do código (sem instalar)
+
+Requer **Python 3.8+** no PATH.
+
+1. Copie `AOC_LightFX.js` para `Documentos\WhirlwindFX\Plugins`.
+2. Rode `iniciar_ponte.bat`.
+3. Opcional: rode `instalar_inicializacao.bat` para a ponte abrir junto com o Windows.
+
+Para testar sem o SignalRGB:
+
+```
+python aoc_lightfx.py 255 0 0
+```
+
+Esse comando deixa o Light FX vermelho fixo.
+
+### Gerar o instalador
+
+Requer Python e [Inno Setup 6](https://jrsoftware.org/isinfo.php) (`winget install JRSoftware.InnoSetup`). Rode `instalador\build.bat`. O script empacota a ponte com o PyInstaller e gera o instalador em `instalador\Output`. Para lançar uma versão nova, altere `AppVersion` em `instalador\AOC_LightFX.iss`.
+
+## Ícone na bandeja
+
+O ícone mostra a cor que está sendo enviada ao monitor. Fica cinza enquanto o SignalRGB não manda cores. Clique nele para abrir o menu:
+
+| Opção | Descrição |
+|---|---|
+| Iniciar com o Windows | Liga ou desliga a abertura da ponte junto com o Windows |
+| Fechar o G-Menu automaticamente | Fecha o G-Menu sempre que ele abrir, porque ele disputa o monitor com a ponte. Vem ligado |
+| Fechar o G-Menu agora | Fecha o G-Menu uma vez |
+| Abrir log | Abre o `ponte.log` |
+| Sair | Encerra a ponte |
+
+A opção do G-Menu fica salva em `config.json`. Para usar o G-Menu de novo, desmarque a opção ou saia da ponte.
 
 Para testar sem o SignalRGB:
 
@@ -58,7 +92,7 @@ Esse comando deixa o Light FX vermelho fixo.
 - **Cor única:** o monitor recebe uma cor de frente e uma de fundo. Não dá para controlar LED por LED.
 - **Velocidade:** cerca de 10 atualizações por segundo, porque o DDC é lento. Efeitos rápidos ficam suavizados.
 - **Só NVIDIA por enquanto.** AMD (ADL) e Intel (IGCL) também têm acesso I2C; contribuições são bem-vindas.
-- **Feche o G-Menu.** Ele usa o mesmo barramento e pode disputar com a ponte.
+- **G-Menu:** ele usa o mesmo barramento e disputa com a ponte. Por padrão, o ícone da bandeja fecha o G-Menu sozinho. Se o G-Menu estiver rodando como administrador, feche-o manualmente.
 - **Monitor ou PC reiniciando:** desligar e ligar o monitor ou acordar o PC da suspensão ainda não foi testado. Se as luzes não voltarem, reinicie a ponte.
 - Problemas ficam registrados em `ponte.log`, na pasta da ponte.
 
