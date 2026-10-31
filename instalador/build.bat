@@ -4,7 +4,7 @@ rem Requer Python 3.8+ e Inno Setup 6 (winget install JRSoftware.InnoSetup)
 setlocal
 cd /d "%~dp0.."
 
-python -m pip install --quiet --upgrade pyinstaller || goto :erro
+python -m pip install --quiet --upgrade pyinstaller pillow || goto :erro
 python instalador\gerar_icone.py || goto :erro
 python -m PyInstaller --noconfirm --clean --windowed --name "AOC Light FX" --icon instalador\icone.ico aoc_lightfx_tray.py || goto :erro
 
