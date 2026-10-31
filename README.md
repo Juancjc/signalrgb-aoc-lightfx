@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="docs/logo.svg" alt="JotAC" width="160">
+<img src="docs/logo.svg?v=jotac" alt="JotAC" width="160">
 
 # JotAC
 
