@@ -274,6 +274,15 @@ class AocLightFx:
                 return None
         return index
 
+    def turn_off(self):
+        """Desliga o Light FX (0x60 = 0). Retorna True se o monitor confirmou."""
+        for _ in range(3):
+            self.set(LIGHTFX, 0)
+            got = self.get(LIGHTFX)
+            if got and got[0] == 0:
+                return True
+        return False
+
     def _scale(self, v):
         return round(max(0, min(255, v)) * self.color_max / 255)
 

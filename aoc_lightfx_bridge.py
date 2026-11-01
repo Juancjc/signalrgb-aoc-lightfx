@@ -28,7 +28,9 @@ else:
 LOG_FILE = os.path.join(BASE_DIR, "ponte.log")
 
 # estado atual, lido pelo icone da bandeja (aoc_lightfx_tray.py)
-status = {"monitor": None, "cor": None, "ultimo_pacote": 0.0}
+# "desligado" e escrito pelo icone da bandeja: com ele ligado a ponte apaga os LEDs
+# e ignora as cores do SignalRGB ate ser religada
+status = {"monitor": None, "cor": None, "ultimo_pacote": 0.0, "desligado": False}
 
 
 def log(msg):
@@ -75,6 +77,8 @@ def main(sock=None):
     last_check = 0.0
     last_verify = 0.0
     verify_idx = 0
+    leds_off = False     # 0x60 = 0 ja confirmado pelo monitor
+    next_off_check = 0.0
 
     while True:
         # espera ate 20 ms por um pacote e depois esvazia a fila sem bloquear,
@@ -97,6 +101,27 @@ def main(sock=None):
 
         now = time.time()
         try:
+            if status["desligado"]:
+                # apaga e confere de tempos em tempos (o OSD ou um power-cycle podem religar)
+                if now >= next_off_check:
+                    current = mon.get(fx.LIGHTFX)
+                    if (current is not None and current[0] == 0) or mon.turn_off():
+                        if not leds_off:
+                            log("LEDs desligados")
+                        leds_off = True
+                        next_off_check = now + CHECK_INTERVAL
+                    else:
+                        log("Falha ao desligar os LEDs; tentando de novo")
+                        next_off_check = now + 2
+                    # ao religar, o efeito e as cores sao gravados de novo
+                    intensity = effect = None
+                    sent.clear()
+                continue
+            if leds_off:
+                leds_off = False
+                next_off_check = 0.0
+                log("LEDs religados")
+
             if target is None:
                 continue
 
@@ -155,6 +180,8 @@ def main(sock=None):
             mon = connect()
             sent.clear()
             intensity = effect = None
+            leds_off = False  # confere de novo, o monitor pode ter sido religado
+            next_off_check = 0.0
 
 
 if __name__ == "__main__":

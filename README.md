@@ -124,17 +124,18 @@ Os efeitos da lista são os do AG323FWG3R3. Monitores com a lista nova de efeito
 
 ## Ícone na bandeja
 
-O ícone mostra a cor que está sendo enviada ao monitor e fica cinza enquanto o SignalRGB não manda cores. Clique nele para abrir o menu:
+O ícone mostra a cor que está sendo enviada ao monitor e fica cinza enquanto o SignalRGB não manda cores ou os LEDs estão desligados. Clique nele para abrir o menu:
 
 | Opção | Descrição |
 |---|---|
+| Desligar LEDs | Apaga a iluminação do monitor e ignora as cores do SignalRGB. Desmarque para religar com a última cor recebida |
 | Iniciar com o Windows | Liga ou desliga a abertura da ponte junto com o Windows |
 | Fechar o G-Menu automaticamente | Fecha o G-Menu sempre que ele abrir, porque ele disputa o monitor com a ponte. Vem ligado |
 | Fechar o G-Menu agora | Fecha o G-Menu uma vez |
 | Abrir log | Abre o `ponte.log` |
 | Sair | Encerra a ponte |
 
-A opção do G-Menu fica salva em `config.json`. Para usar o G-Menu de novo, desmarque a opção ou saia da ponte.
+As opções de desligar os LEDs e do G-Menu ficam salvas em `config.json`. Para usar o G-Menu de novo, desmarque a opção ou saia da ponte.
 
 ## Limitações
 

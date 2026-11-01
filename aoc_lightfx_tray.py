@@ -2,6 +2,7 @@
 
 Roda a ponte (aoc_lightfx_bridge.py) em segundo plano e mostra um icone com a
 cor atual. Pelo menu do icone da para:
+  - desligar/religar os LEDs do monitor;
   - ligar/desligar a abertura junto com o Windows;
   - fechar o G-Menu, que disputa o barramento DDC e atrapalha o SignalRGB
     (pode ficar automatico, verificando a cada poucos segundos);
@@ -48,7 +49,7 @@ SM_CXSMICON = 49
 TH32CS_SNAPPROCESS = 0x2
 PROCESS_TERMINATE = 0x1
 
-CMD_STARTUP, CMD_AUTO_GMENU, CMD_KILL_GMENU, CMD_LOG, CMD_EXIT = range(1, 6)
+CMD_STARTUP, CMD_AUTO_GMENU, CMD_KILL_GMENU, CMD_LOG, CMD_EXIT, CMD_LEDS_OFF = range(1, 7)
 
 
 class WNDCLASSW(ctypes.Structure):
@@ -140,7 +141,7 @@ kernel32.CloseHandle.argtypes = [wt.HANDLE]
 # --- configuracao ---------------------------------------------------------
 
 def load_config():
-    cfg = {"fechar_gmenu": True}
+    cfg = {"fechar_gmenu": True, "leds_desligados": False}
     try:
         with open(CONFIG_FILE, encoding="utf-8") as f:
             cfg.update(json.load(f))
@@ -283,6 +284,7 @@ def make_icon(color):
 class Tray:
     def __init__(self):
         self.cfg = load_config()
+        bridge.status["desligado"] = bool(self.cfg["leds_desligados"])
         self.icon = None
         self.icon_color = "inicial"
         self.tip = ""
@@ -325,13 +327,15 @@ class Tray:
         st = bridge.status
         if not st["monitor"]:
             return "Procurando o monitor AOC..."
+        if st["desligado"]:
+            return "LEDs desligados"
         if time.time() - st["ultimo_pacote"] > RECEIVING_TIMEOUT:
             return "Aguardando o SignalRGB"
         return "Recebendo cores do SignalRGB"
 
     def refresh(self):
         st = bridge.status
-        receiving = time.time() - st["ultimo_pacote"] <= RECEIVING_TIMEOUT
+        receiving = time.time() - st["ultimo_pacote"] <= RECEIVING_TIMEOUT and not st["desligado"]
         color = st["cor"] if receiving else None
         tip = f"{APP_NAME}\n{self.status_text()}"[:127]
         if color == self.icon_color and tip == self.tip:
@@ -350,6 +354,9 @@ class Tray:
         user32.AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, self.status_text())
         if bridge.status["monitor"]:
             user32.AppendMenuW(menu, MF_STRING | MF_GRAYED, 0, bridge.status["monitor"])
+        user32.AppendMenuW(menu, MF_SEPARATOR, 0, None)
+        user32.AppendMenuW(menu, MF_STRING | (MF_CHECKED if self.cfg["leds_desligados"] else 0),
+                           CMD_LEDS_OFF, "Desligar LEDs")
         user32.AppendMenuW(menu, MF_SEPARATOR, 0, None)
         user32.AppendMenuW(menu, MF_STRING | (MF_CHECKED if startup_enabled() else 0),
                            CMD_STARTUP, "Iniciar com o Windows")
@@ -370,7 +377,12 @@ class Tray:
         self.run_command(cmd)
 
     def run_command(self, cmd):
-        if cmd == CMD_STARTUP:
+        if cmd == CMD_LEDS_OFF:
+            self.cfg["leds_desligados"] = not self.cfg["leds_desligados"]
+            save_config(self.cfg)
+            bridge.status["desligado"] = self.cfg["leds_desligados"]
+            self.refresh()
+        elif cmd == CMD_STARTUP:
             try:
                 set_startup(not startup_enabled())
             except OSError as e:
